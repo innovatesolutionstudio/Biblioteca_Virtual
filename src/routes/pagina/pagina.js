@@ -8,13 +8,40 @@ router.get('/', (req, res) => {
 });
 
 // Ruta catálogo de libros
-router.get('/catalogo', (req, res) => {
-  res.render('catalogo');
+router.get('/Biblioteca', (req, res) => {
+  res.render('biblioteca/biblioteca');
 });
 
-// Ruta contacto
-router.get('/contacto', (req, res) => {
-  res.render('contacto');
+// Ruta para ver libro especifico
+router.get('/Libro', (req, res) => {
+  res.render('biblioteca/libro');
 });
+
+// Ruta para ChatBot
+router.get('/Asistente', (req, res) => {
+  res.render('Chatbot/chatbot');
+});
+
+// Ruta para Galeria de imagenes generadas
+router.get('/Galeria', (req, res) => {
+  res.render('galeria/galeria');
+});
+
+// Ruta para Nuestra Bolivia
+router.get('/Nuestra-Bolivia', (req, res) => {
+  res.render('Boliva/mapas');
+});
+
+// Ruta para Evolucion Historica - inicio
+router.get('/Evolucion-Historica', (req, res) => {
+  res.render('Evolucion/evolucion_historica');
+});
+
+// Ruta para Evolucion Historica - dashboard
+router.get('/Evolucion-Historica-Dashboard', (req, res) => {
+  res.render('Evolucion/dashboard');
+});
+
+
 
 module.exports = router;
