@@ -14,9 +14,10 @@ app.use(express.urlencoded({ extended: false }));
 
 // Rutas para la pagina principal 
 const paginaRoutes = require('./src/routes/pagina/pagina');
+const loginRoutes = require('./src/routes/login/login');
 
 app.use('/', paginaRoutes);
-
+app.use(loginRoutes);
 
 const rt12 = require('./src/routes/rt12/crud_libros');
 
