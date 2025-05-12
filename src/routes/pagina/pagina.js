@@ -7,15 +7,7 @@ router.get('/', (req, res) => {
   res.render('Pagina/index'); // Usa una vista llamada 'inicio.ejs' o el motor que estés usando
 });
 
-// Ruta catálogo de libros
-router.get('/Biblioteca', (req, res) => {
-  res.render('biblioteca/biblioteca');
-});
 
-// Ruta para ver libro especifico
-router.get('/Libro', (req, res) => {
-  res.render('biblioteca/libro');
-});
 
 // Ruta para ChatBot
 router.get('/Asistente', (req, res) => {
