@@ -1,111 +1,87 @@
-
 <!--Cabecera-->
 <%- include('../Pagina/cabecera.ejs') %>
 
 <section class="modulo-historico">
-    <h2 class="titulo-historico">Evolución Histórica de Bolivia</h2>
-  
-    <div class="contenedor-historico">
-      <!-- Gráfico principal -->
-      <div class="grafico-principal">
-        
-        <canvas id="graficoBarra"></canvas>
-      </div>
-  
-      <!-- Filtros laterales -->
-      <aside class="filtros-historicos">
-        <div class="filtro">
-          <label>Rango de Años</label>
-          <input type="date" value="1850-05-12">
-          <input type="date" value="1900-05-12">
-        </div>
-        <div class="filtro">
-          <label>Ubicación Geográfica</label>
-          <select><option>La Paz</option></select>
-          <select><option>Sucre</option></select>
-        </div>
-        <div class="filtro">
-          <label>Categoría de Datos</label>
-          <select><option>Economía</option></select>
-        </div>
-        <div class="resumen-filtros">
-          <p><strong>El usuario seleccionó:</strong></p>
-          <ul>
-            <li>✅ Año: 1850-1900</li>
-            <li>✅ Ubicación: Bolivia completa</li>
-            <li>✅ Categoría: Economía</li>
-          </ul>
-          <button class="boton-generar">Generar</button>
-        </div>
-      </aside>
+  <h2 class="titulo-historico">Evolución Histórica de la Inflación en Bolivia</h2>
+
+  <div class="contenedor-historico">
+    <!-- Gráfico principal -->
+    <div class="grafico-principal">
+      <canvas id="graficoBarra"></canvas>
     </div>
-  
-    <!-- Métricas inferiores -->
-    <div class="metricas-historicas">
-      <div class="metrica">
-        <h4>Payment issues</h4>
-        <canvas id="graficoBarraMini"></canvas>
-        <p>Total number of errors: <strong>19</strong></p>
+
+    <!-- Filtros laterales -->
+    <aside class="filtros-historicos">
+      <form method="GET" action="/Evolucion-Historica-Dashboard" class="filtro">
+        <label for="anio">Selecciona un año:</label>
+        <select name="anio" id="anio">
+          <% aniosDisponibles.forEach(anio => { %>
+            <option value="<%= anio %>" <%= anio == anioSeleccionado ? 'selected' : '' %>><%= anio %></option>
+          <% }) %>
+        </select>
+        <button type="submit" class="boton-generar">Generar</button>
+      </form>
+
+      <div class="resumen-filtros">
+        <p><strong>Seleccionado:</strong></p>
+        <ul>
+          <li>✅ Año: <%= anioSeleccionado || 'Todos' %></li>
+          <li>✅ Pais: Bolivia</li>
+        </ul>
       </div>
-      <div class="metrica">
-        <h4>Success rate</h4>
-        <canvas id="graficoDona"></canvas>
-        <p><strong>98%</strong> de éxito</p>
-      </div>
-      <div class="metrica">
-        <h4>Payment issues</h4>
-        <canvas id="graficoBarraMini2"></canvas>
-        <p>Total number of errors: <strong>19</strong></p>
-      </div>
+    </aside>
+  </div>
+
+  <!-- Métricas inferiores falsas -->
+  <div class="metricas-historicas">
+    <div class="metrica">
+      <h4>Fake Data 1</h4>
+      <canvas id="graficoBarraMini"></canvas>
+      <p>Total: <strong>19</strong></p>
     </div>
-  </section>
-  
-  <!-- Chart.js v4 -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-  const graficoBarra = new Chart(document.getElementById('graficoBarra'), {
-    type: 'bar',   
+    <div class="metrica">
+      <h4>Fake Data 2</h4>
+      <canvas id="graficoDona"></canvas>
+      <p><strong>98%</strong> éxito</p>
+    </div>
+  </div>
+</section>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  // Inyectar los datos del backend
+  const datosInflacion = <%- JSON.stringify(datosInflacion) %>;
+
+  // Extraer etiquetas y valores
+  const etiquetas = datosInflacion.map(d => d.Year);
+  const valores = datosInflacion.map(d => d.Inflation);
+
+  new Chart(document.getElementById('graficoBarra'), {
+    type: 'bar',
     data: {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      labels: etiquetas,
       datasets: [
-        { label: 'Job View', data: [40, 60, 80, 55, 40, 65, 70, 90, 75, 50, 60, 70], backgroundColor: '#cfd8dc' },
-        { label: 'Job Applied', data: [30, 50, 70, 50, 35, 60, 60, 77, 60, 45, 50, 65], backgroundColor: '#4caf50' }
+        {
+          label: 'Inflación (%)',
+          data: valores,
+          backgroundColor: '#4caf50'
+        }
       ]
     },
     options: {
       responsive: true,
-      plugins: { legend: { position: 'top' }, title: { display: false } }
-
+      plugins: {
+        legend: { position: 'top' },
+        title: {
+          display: true,
+          text: 'Inflación en Bolivia'
+        }
+      }
     }
   });
-  
-  new Chart(document.getElementById('graficoBarraMini'), {
-    type: 'bar',
-    data: {
-      labels: ['1', '5', '3', '10'],
-      datasets: [{ label: 'Errores', data: [1, 5, 3, 10], backgroundColor: ['#f9a825', '#ef6c00', '#ab47bc', '#26c6da'] }]
-    },
-    options: { plugins: { legend: { display: false } } }
-  });
-  
-  new Chart(document.getElementById('graficoBarraMini2'), {
-    type: 'bar',
-    data: {
-      labels: ['1', '5', '3', '10'],
-      datasets: [{ label: 'Errores', data: [1, 5, 3, 10], backgroundColor: ['#f9a825', '#ef6c00', '#ab47bc', '#26c6da'] }]
-    },
-    options: { plugins: { legend: { display: false } } }
-  });
-  
-  new Chart(document.getElementById('graficoDona'), {
-    type: 'doughnut',
-    data: {
-      labels: ['Unsuccessful', 'Successful'],
-      datasets: [{ data: [1, 150], backgroundColor: ['#e0e0e0', '#4caf50'] }]
-    },
-    options: { cutout: '70%', plugins: { legend: { display: false } } }
-  });
-  </script>
-  
-<!--Pie de pagina -->
+</script>
+
+<!--Pie de página-->
 <%- include('../Pagina/footer.ejs') %>

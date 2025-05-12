@@ -1,6 +1,7 @@
 // src/routes/pagina/index.js
 const express = require('express');
 const router = express.Router();
+const axios = require('axios');
 
 // Ruta principal - Página de inicio
 router.get('/', (req, res) => {
@@ -38,10 +39,36 @@ router.get('/Evolucion-Historica', (req, res) => {
 });
 
 // Ruta para Evolucion Historica - dashboard
-router.get('/Evolucion-Historica-Dashboard', (req, res) => {
-  res.render('Evolucion/dashboard');
-});
+router.get('/Evolucion-Historica-Dashboard', async (req, res) => {
+  try {
+    const anioSeleccionado = req.query.anio;
+    const urlDatos = anioSeleccionado
+      ? `http://localhost:5000/api/inflacion?anio=${anioSeleccionado}`
+      : `http://localhost:5000/api/inflacion`;
 
+    // Obtener datos del backend Python
+    const [datosInflacionRes, aniosRes] = await Promise.all([
+      axios.get(urlDatos),
+      axios.get('http://localhost:5000/api/anios')
+    ]);
+
+    const datosInflacion = datosInflacionRes.data;
+    const aniosDisponibles = aniosRes.data;
+
+    res.render('Evolucion/dashboard', {
+      datosInflacion,
+      aniosDisponibles,
+      anioSeleccionado
+    });
+  } catch (error) {
+    console.error('Error al obtener datos:', error.message);
+    res.render('Evolucion/dashboard', {
+      datosInflacion: [],
+      aniosDisponibles: [],
+      anioSeleccionado: null
+    });
+  }
+});
 
 
 module.exports = router;
