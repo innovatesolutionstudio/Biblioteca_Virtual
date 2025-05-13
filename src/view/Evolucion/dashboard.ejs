@@ -10,39 +10,49 @@
       <canvas id="graficoBarra"></canvas>
     </div>
 
-    <!-- Filtros laterales -->
     <aside class="filtros-historicos">
-      <form method="GET" action="/Evolucion-Historica-Dashboard" class="filtro">
+      <form id="formFiltros" class="filtro">
         <label for="anio">Selecciona un año:</label>
         <select name="anio" id="anio">
           <% aniosDisponibles.forEach(anio => { %>
             <option value="<%= anio %>" <%= anio == anioSeleccionado ? 'selected' : '' %>><%= anio %></option>
           <% }) %>
         </select>
+
+        <label for="departamentoSelector">Departamento:</label>
+        <select id="departamentoSelector" name="departamento"></select>
+
+        <label for="indicadorPoblacionSelector">Indicador de Población:</label>
+        <select id="indicadorPoblacionSelector" name="indicadorPoblacion"></select>
+
+        <label for="indicadorPobrezaSelector">Indicador de Pobreza:</label>
+        <select id="indicadorPobrezaSelector" name="indicadorPobreza"></select>
+
         <button type="submit" class="boton-generar">Generar</button>
       </form>
 
       <div class="resumen-filtros">
         <p><strong>Seleccionado:</strong></p>
         <ul>
-          <li>✅ Año: <%= anioSeleccionado || 'Todos' %></li>
-          <li>✅ Pais: Bolivia</li>
+          <li>✅ Año: <span id="resumenAnio"><%= anioSeleccionado || 'Todos' %></span></li>
+          <li>✅ Departamento: <span id="resumenDepartamento">-</span></li>
+          <li>✅ Indicador de Población: <span id="resumenIndicador">-</span></li>
+          <li>✅ Indicador de Pobreza: <span id="resumenIndicadorPobreza">-</span></li>
         </ul>
       </div>
     </aside>
   </div>
 
-  <!-- Métricas inferiores falsas -->
+  <!-- Métricas inferiores -->
   <div class="metricas-historicas">
     <div class="metrica">
-      <h4>Fake Data 1</h4>
+      <h4>Población por Municipio</h4>
       <canvas id="graficoBarraMini"></canvas>
-      <p>Total: <strong>19</strong></p>
     </div>
+
     <div class="metrica">
-      <h4>Fake Data 2</h4>
+      <h4>Pobreza por Municipio</h4>
       <canvas id="graficoDona"></canvas>
-      <p><strong>98%</strong> éxito</p>
     </div>
   </div>
 </section>
@@ -51,35 +61,144 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-  // Inyectar los datos del backend
-  const datosInflacion = <%- JSON.stringify(datosInflacion) %>;
+  async function cargarFiltros() {
+    const depSelect = document.getElementById('departamentoSelector');
+    const indPobSelect = document.getElementById('indicadorPoblacionSelector');
+    const indPobrezSelect = document.getElementById('indicadorPobrezaSelector');
 
-  // Extraer etiquetas y valores
-  const etiquetas = datosInflacion.map(d => d.Year);
-  const valores = datosInflacion.map(d => d.Inflation);
+    const departamentos = ['CHUQUISACA', 'LA PAZ', 'COCHABAMBA', 'ORURO', 'POTOSI', 'TARIJA', 'SANTA CRUZ', 'BENI', 'PANDO'];
+    departamentos.forEach(dep => {
+      const option = document.createElement('option');
+      option.value = dep;
+      option.textContent = dep;
+      depSelect.appendChild(option);
+    });
 
-  new Chart(document.getElementById('graficoBarra'), {
-    type: 'bar',
-    data: {
-      labels: etiquetas,
-      datasets: [
-        {
-          label: 'Inflación (%)',
-          data: valores,
-          backgroundColor: '#4caf50'
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { position: 'top' },
-        title: {
-          display: true,
-          text: 'Inflación en Bolivia'
+    const resPob = await fetch('http://localhost:5000/api/indicadores_poblacion');
+    const indicadoresPob = await resPob.json();
+    indicadoresPob.forEach(ind => {
+      const option = document.createElement('option');
+      option.value = ind;
+      option.textContent = ind;
+      indPobSelect.appendChild(option);
+    });
+
+    const resPobreza = await fetch('http://localhost:5000/api/indicadores_pobreza');
+    const indicadoresPobreza = await resPobreza.json();
+    indicadoresPobreza.forEach(ind => {
+      const option = document.createElement('option');
+      option.value = ind;
+      option.textContent = ind;
+      indPobrezSelect.appendChild(option);
+    });
+  }
+
+  async function generarGraficoInflacion(anio) {
+    const res = await fetch(`http://localhost:5000/api/inflacion?anio=${anio}`);
+    const datosInflacion = await res.json();
+    const etiquetas = datosInflacion.map(d => d.Year);
+    const valores = datosInflacion.map(d => d.Inflation);
+    const ctx = document.getElementById('graficoBarra').getContext('2d');
+
+    if (window.chartInflacion) window.chartInflacion.destroy();
+
+    window.chartInflacion = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: etiquetas,
+        datasets: [{ label: 'Inflación (%)', data: valores, backgroundColor: '#4caf50' }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top' },
+          title: { display: true, text: 'Inflación en Bolivia' }
         }
       }
-    }
+    });
+  }
+
+  async function generarGraficoPoblacion(departamento, indicador) {
+    const res = await fetch(`http://localhost:5000/api/poblacion?departamento=${encodeURIComponent(departamento)}&indicador=${encodeURIComponent(indicador)}`);
+    const datos = await res.json();
+    const ctx = document.getElementById('graficoBarraMini').getContext('2d');
+    if (window.chartPoblacion) window.chartPoblacion.destroy();
+
+    window.chartPoblacion = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: datos.labels,
+        datasets: datos.tipo === 'comparativo' ? [
+          { label: 'Hombres', data: datos.hombres, backgroundColor: '#2196f3' },
+          { label: 'Mujeres', data: datos.mujeres, backgroundColor: '#ff9800' }
+        ] : [
+          { label: indicador, data: datos.valores, backgroundColor: '#4caf50' }
+        ]
+      }
+    });
+  }
+
+  async function generarGraficoPobreza(departamento, indicador) {
+    const res = await fetch(`http://localhost:5000/api/pobreza?departamento=${encodeURIComponent(departamento)}&indicador=${encodeURIComponent(indicador)}`);
+    const datos = await res.json();
+    const ctx = document.getElementById('graficoDona').getContext('2d');
+    if (window.chartPobreza) window.chartPobreza.destroy();
+
+    window.chartPobreza = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: datos.labels,
+        datasets: datos.tipo === 'comparativo' ? [
+          { label: 'Hombres', data: datos.hombres, borderColor: '#2196f3', fill: false },
+          { label: 'Mujeres', data: datos.mujeres, borderColor: '#ff9800', fill: false }
+        ] : [
+          { label: indicador, data: datos.valores, borderColor: '#4caf50', fill: false }
+        ]
+      },
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    await cargarFiltros();
+
+    const form = document.getElementById('formFiltros');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const anio = document.getElementById('anio').value;
+      const departamento = document.getElementById('departamentoSelector').value;
+      const indicadorPoblacion = document.getElementById('indicadorPoblacionSelector').value;
+      const indicadorPobreza = document.getElementById('indicadorPobrezaSelector').value;
+
+      await generarGraficoInflacion(anio);
+      await generarGraficoPoblacion(departamento, indicadorPoblacion);
+      await generarGraficoPobreza(departamento, indicadorPobreza);
+
+      document.getElementById('resumenAnio').textContent = anio;
+      document.getElementById('resumenDepartamento').textContent = departamento;
+      document.getElementById('resumenIndicador').textContent = indicadorPoblacion;
+      document.getElementById('resumenIndicadorPobreza').textContent = indicadorPobreza;
+      document.getElementById('indicadorPobrezaTexto').textContent = indicadorPobreza;
+    });
+
+    // Carga inicial
+    setTimeout(async () => {
+      const anioInicial = document.getElementById('anio').value;
+      const departamentoInicial = document.getElementById('departamentoSelector').value;
+      const indicadorPoblacion = document.getElementById('indicadorPoblacionSelector').value;
+      const indicadorPobreza = document.getElementById('indicadorPobrezaSelector').value;
+
+      if (anioInicial && departamentoInicial && indicadorPoblacion && indicadorPobreza) {
+        await generarGraficoInflacion(anioInicial);
+        await generarGraficoPoblacion(departamentoInicial, indicadorPoblacion);
+        await generarGraficoPobreza(departamentoInicial, indicadorPobreza);
+
+        document.getElementById('resumenAnio').textContent = anioInicial;
+        document.getElementById('resumenDepartamento').textContent = departamentoInicial;
+        document.getElementById('resumenIndicador').textContent = indicadorPoblacion;
+        document.getElementById('resumenIndicadorPobreza').textContent = indicadorPobreza;
+        document.getElementById('indicadorPobrezaTexto').textContent = indicadorPobreza;
+      }
+    }, 500);
   });
 </script>
 
