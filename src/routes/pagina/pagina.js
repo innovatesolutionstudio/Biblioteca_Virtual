@@ -1,7 +1,13 @@
-// src/routes/pagina/index.js
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
+const FLASK_HOST = process.env.FLASK_HOST;
+const FLASK_PORT = process.env.FLASK_PORT || 5000;
+
+// Construir la URL base del servidor Flask
+const FLASK_BASE_URL = `http://${FLASK_HOST}:${FLASK_PORT}`;
+
+
 
 // Ruta principal - Página de inicio
 router.get('/', (req, res) => {
@@ -38,18 +44,18 @@ router.get('/Evolucion-Historica', (req, res) => {
   res.render('Evolucion/evolucion_historica');
 });
 
+
 // Ruta para Evolucion Historica - dashboard
 router.get('/Evolucion-Historica-Dashboard', async (req, res) => {
   try {
     const anioSeleccionado = req.query.anio;
     const urlDatos = anioSeleccionado
-      ? `http://localhost:5000/api/inflacion?anio=${anioSeleccionado}`
-      : `http://localhost:5000/api/inflacion`;
+      ? `${FLASK_BASE_URL}/api/inflacion?anio=${anioSeleccionado}`
+      : `${FLASK_BASE_URL}/api/inflacion`;
 
-    // Obtener datos del backend Python
     const [datosInflacionRes, aniosRes] = await Promise.all([
       axios.get(urlDatos),
-      axios.get('http://localhost:5000/api/anios')
+      axios.get(`${FLASK_BASE_URL}/api/anios`)
     ]);
 
     const datosInflacion = datosInflacionRes.data;
@@ -58,7 +64,8 @@ router.get('/Evolucion-Historica-Dashboard', async (req, res) => {
     res.render('Evolucion/dashboard', {
       datosInflacion,
       aniosDisponibles,
-      anioSeleccionado
+      anioSeleccionado,
+      flaskHost: FLASK_BASE_URL 
     });
   } catch (error) {
     console.error('Error al obtener datos:', error.message);
@@ -69,6 +76,5 @@ router.get('/Evolucion-Historica-Dashboard', async (req, res) => {
     });
   }
 });
-
 
 module.exports = router;

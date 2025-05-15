@@ -6,12 +6,12 @@ router.get('/dashboard', async (req, res) => {
     try {
         const anioSeleccionado = req.query.anio;
         const urlDatos = anioSeleccionado
-            ? `http://localhost:5000/api/inflacion?anio=${anioSeleccionado}`
-            : `http://localhost:5000/api/inflacion`;
+            ? `http://10.0.3.48:5000/api/inflacion?anio=${anioSeleccionado}`
+            : `http://10.0.3.48:5000/api/inflacion`;
 
         const [datosInflacionRes, aniosRes] = await Promise.all([
             axios.get(urlDatos),
-            axios.get('http://localhost:5000/api/anios')
+            axios.get('http://10.0.3.48:5000/api/anios')
         ]);
 
         const datosInflacion = datosInflacionRes.data;

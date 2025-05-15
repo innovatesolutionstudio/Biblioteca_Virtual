@@ -61,12 +61,14 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+  const FLASK_HOST = '<%= flaskHost %>';
+
   async function cargarFiltros() {
     const depSelect = document.getElementById('departamentoSelector');
     const indPobSelect = document.getElementById('indicadorPoblacionSelector');
     const indPobrezSelect = document.getElementById('indicadorPobrezaSelector');
 
-    const departamentos = ['CHUQUISACA', 'LA PAZ', 'COCHABAMBA', 'ORURO', 'POTOSI', 'TARIJA', 'SANTA CRUZ', 'BENI', 'PANDO'];
+    const departamentos = ['CHUQUISACA', 'LA PAZ', 'COCHABAMBA', 'ORURO', 'POTOSÍ', 'TARIJA', 'SANTA CRUZ', 'BENI', 'PANDO'];
     departamentos.forEach(dep => {
       const option = document.createElement('option');
       option.value = dep;
@@ -74,7 +76,7 @@
       depSelect.appendChild(option);
     });
 
-    const resPob = await fetch('http://localhost:5000/api/indicadores_poblacion');
+    const resPob = await fetch(`${FLASK_HOST}/api/indicadores_poblacion`);
     const indicadoresPob = await resPob.json();
     indicadoresPob.forEach(ind => {
       const option = document.createElement('option');
@@ -83,7 +85,7 @@
       indPobSelect.appendChild(option);
     });
 
-    const resPobreza = await fetch('http://localhost:5000/api/indicadores_pobreza');
+    const resPobreza = await fetch(`${FLASK_HOST}/api/indicadores_pobreza`);
     const indicadoresPobreza = await resPobreza.json();
     indicadoresPobreza.forEach(ind => {
       const option = document.createElement('option');
@@ -94,7 +96,7 @@
   }
 
   async function generarGraficoInflacion(anio) {
-    const res = await fetch(`http://localhost:5000/api/inflacion?anio=${anio}`);
+    const res = await fetch(`${FLASK_HOST}/api/inflacion?anio=${anio}`);
     const datosInflacion = await res.json();
     const etiquetas = datosInflacion.map(d => d.Year);
     const valores = datosInflacion.map(d => d.Inflation);
@@ -119,7 +121,7 @@
   }
 
   async function generarGraficoPoblacion(departamento, indicador) {
-    const res = await fetch(`http://localhost:5000/api/poblacion?departamento=${encodeURIComponent(departamento)}&indicador=${encodeURIComponent(indicador)}`);
+    const res = await fetch(`${FLASK_HOST}/api/poblacion?departamento=${encodeURIComponent(departamento)}&indicador=${encodeURIComponent(indicador)}`);
     const datos = await res.json();
     const ctx = document.getElementById('graficoBarraMini').getContext('2d');
     if (window.chartPoblacion) window.chartPoblacion.destroy();
@@ -139,7 +141,7 @@
   }
 
   async function generarGraficoPobreza(departamento, indicador) {
-    const res = await fetch(`http://localhost:5000/api/pobreza?departamento=${encodeURIComponent(departamento)}&indicador=${encodeURIComponent(indicador)}`);
+    const res = await fetch(`${FLASK_HOST}/api/pobreza?departamento=${encodeURIComponent(departamento)}&indicador=${encodeURIComponent(indicador)}`);
     const datos = await res.json();
     const ctx = document.getElementById('graficoDona').getContext('2d');
     if (window.chartPobreza) window.chartPobreza.destroy();
@@ -180,7 +182,6 @@
       document.getElementById('indicadorPobrezaTexto').textContent = indicadorPobreza;
     });
 
-    // Carga inicial
     setTimeout(async () => {
       const anioInicial = document.getElementById('anio').value;
       const departamentoInicial = document.getElementById('departamentoSelector').value;
@@ -203,4 +204,4 @@
 </script>
 
 <!--Pie de página-->
-<%- include('../Pagina/footer.ejs') %>
+<%- include('../Pagina/footer.ejs') %>  
