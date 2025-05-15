@@ -29,6 +29,7 @@
         <select id="indicadorPobrezaSelector" name="indicadorPobreza"></select>
 
         <button type="submit" class="boton-generar">Generar</button>
+        <button type="button" class="boton-exportar" onclick="exportarPDF()">Exportar PDF</button>
       </form>
 
       <div class="resumen-filtros">
@@ -59,9 +60,82 @@
 
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <script>
   const FLASK_HOST = '<%= flaskHost %>';
+
+    async function exportarPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const anio = document.getElementById('anio').value;
+    const dep = document.getElementById('departamentoSelector').value;
+    const indPob = document.getElementById('indicadorPoblacionSelector').value;
+    const indPobrez = document.getElementById('indicadorPobrezaSelector').value;
+
+    const fechaHoy = new Date().toLocaleDateString();
+
+    // Encabezado principal
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("Informe de Evolución Histórica", 105, 15, { align: 'center' });
+    doc.setLineWidth(0.5);
+    doc.line(10, 18, 200, 18);
+
+    // Caja de información
+    doc.setFillColor(240);
+    doc.rect(10, 22, 190, 20, 'F');
+    doc.setFontSize(10);
+    doc.setTextColor(50);
+    doc.text(`Año: ${anio}`, 12, 28);
+    doc.text(`Departamento: ${dep}`, 120, 28); // mejor alineado a la derecha
+
+    doc.text(`Indicador Población:`, 12, 34);
+    doc.setFont("helvetica", "normal");
+    doc.text(doc.splitTextToSize(indPob, 85), 50, 34); // Salto si es largo
+
+    doc.setFont("helvetica", "bold");
+    doc.text(`Indicador Pobreza:`, 12, 40);
+    doc.setFont("helvetica", "normal");
+    doc.text(doc.splitTextToSize(indPobrez, 85), 50, 40);
+
+
+    // Función para insertar un gráfico con título
+      const addCanvasImage = async (canvasId, titulo, posY) => {
+        const spacingTitleToImage = 6;
+        const imageHeight = 50;
+        const spacingAfterImage = 20;
+
+        // Título
+        doc.setFontSize(12);
+        doc.setTextColor(0);
+        doc.setFont("helvetica", "bold");
+        doc.text(titulo, 105, posY, { align: 'center' });
+
+        // Imagen
+        const canvas = document.getElementById(canvasId);
+        const imgData = canvas.toDataURL('image/png');
+        doc.addImage(imgData, 'PNG', 10, posY + spacingTitleToImage, 190, imageHeight);
+
+        // Devuelve la posición final para continuar
+        return posY + spacingTitleToImage + imageHeight + spacingAfterImage;
+      };
+
+      await addCanvasImage('graficoBarra', "Gráfico 1: Inflación", 48);
+      await addCanvasImage('graficoBarraMini', "Gráfico 2: Población", 114);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await addCanvasImage('graficoDona', "Gráfico 3: Pobreza", 176);
+
+
+    // Pie de página
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text(`Generado el ${fechaHoy} por Biblioteca Virtual`, 105, 285, { align: 'center' });
+
+    doc.save(`reporte_${dep}_${anio}.pdf`);
+  }
 
   async function cargarFiltros() {
     const depSelect = document.getElementById('departamentoSelector');
