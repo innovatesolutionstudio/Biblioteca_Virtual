@@ -6,8 +6,17 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-FLASK_HOST = os.getenv('FLASK_HOST', '127.0.0.1')
-FLASK_PORT = int(os.getenv('FLASK_PORT', 5000))
+# Validación de variables de entorno
+FLASK_HOST = os.getenv('FLASK_HOST')
+FLASK_PORT = os.getenv('FLASK_PORT')
+
+if not FLASK_HOST or not FLASK_PORT:
+    raise EnvironmentError("Faltan variables de entorno FLASK_HOST o FLASK_PORT.")
+
+try:
+    FLASK_PORT = int(FLASK_PORT)
+except ValueError:
+    raise ValueError("FLASK_PORT debe ser un número entero.")
 
 app = Flask(__name__)
 CORS(app)
@@ -15,6 +24,10 @@ CORS(app)
 # Archivos
 FILE_PATH_INFLACION = 'uploads/dataset/inflacion_bolivia.xls'
 FILE_PATH_POBLACION = 'uploads/dataset/censo_poblacion.xlsx'
+# Verificar que los archivos existen
+for path in [FILE_PATH_INFLACION, FILE_PATH_POBLACION, 'uploads/dataset/censo_pobreza.xlsx']:
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Archivo no encontrado: {path}")
 
 # ========================================
 # API: Inflación
@@ -23,32 +36,39 @@ FILE_PATH_POBLACION = 'uploads/dataset/censo_poblacion.xlsx'
 def get_inflation():
     anio_param = request.args.get('anio')
     try:
-        start_year = int(anio_param) if anio_param else 1980
+        selected_year = int(anio_param) if anio_param else 1980
     except ValueError:
-        start_year = 1980
+        selected_year = 1980
 
-    end_year = start_year + 9
-
+    # Leer archivo y procesar
     df = pd.read_excel(FILE_PATH_INFLACION, sheet_name=0, header=3)
     df = df.dropna(how='all', axis=0)
-
     bolivia_data = df[df['Country Code'] == 'BOL'].copy()
-    years = [col for col in bolivia_data.columns if col.isdigit()]
-    inflation_data = bolivia_data[years].iloc[0].dropna().astype(float)
 
+    years = [int(col) for col in bolivia_data.columns if col.isdigit()]
+    inflation_data = bolivia_data[[str(y) for y in years]].iloc[0].dropna().astype(float)
     inflation_df = pd.DataFrame({
-        'Year': inflation_data.index,
+        'Year': inflation_data.index.astype(int),
         'Inflation': inflation_data.values
     })
 
-    inflation_df['Year'] = inflation_df['Year'].astype(int)
+    # Verificar si hay suficientes años hacia adelante
+    max_year = inflation_df['Year'].max()
+    min_year = inflation_df['Year'].min()
+
+    if selected_year + 9 <= max_year:
+        start_year = selected_year
+        end_year = selected_year + 9
+    else:
+        end_year = selected_year
+        start_year = max(selected_year - 9, min_year)
+
     filtered = inflation_df[
         (inflation_df['Year'] >= start_year) &
         (inflation_df['Year'] <= end_year)
     ]
 
     return jsonify(filtered.to_dict(orient='records'))
-
 
 @app.route('/api/anios', methods=['GET'])
 def get_years():
