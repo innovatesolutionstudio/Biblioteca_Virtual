@@ -6,6 +6,12 @@ const session = require('express-session'); // ✅ Solo una vez
 require('dotenv').config(); // Variables de entorno
 
 
+// Middleware
+app.use(session({ secret: 'clave-secreta', resave: false, saveUninitialized: true }));
+
+
+
+
 // Configurar motor de vistas (por ejemplo, EJS)
 app.set('views', path.join(__dirname, 'src/view'));
 app.set('view engine', 'ejs'); // O pug, hbs, etc. según estés usando
@@ -42,6 +48,7 @@ app.use((req, res, next) => {
 });
 
 
+
 // Rutas para la pagina principal 
 const paginaRoutes = require('./src/routes/pagina/pagina');
 const loginRoutes = require('./src/routes/login/login');
@@ -58,8 +65,20 @@ app.use(libroRoutes);
 app.use(dashboarRoutes);
 app.use(chatbotRoutes);
 
-const rt12 = require('./src/routes/rt12/crud_libros');
 
+// Rutas
+
+const ConfigRoutes = require('./src/routes/config/config');
+const setServiceUrl = require('./src/middlewares/setServiceUrl');
+
+app.use(ConfigRoutes);
+app.use(setServiceUrl);
+
+
+
+
+
+const rt12 = require('./src/routes/rt12/crud_libros');
 app.use(rt12);
 
 //rutas de improvisacion

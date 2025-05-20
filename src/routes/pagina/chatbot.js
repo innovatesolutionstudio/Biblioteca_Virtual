@@ -11,11 +11,12 @@ router.post('/api/chatbot', async (req, res) => {
     console.log("📩 Enviando pregunta a microservicio PHP:", pregunta);
 
     const fetch = (await import('node-fetch')).default;
-    const respuestaPhp = await fetch('http://10.0.8.144:5003/src/Chatbot.php', {
+    const respuestaPhp = await fetch(`${res.locals.serviceUrls.phpHost}/src/Chatbot.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ pregunta })
     });
+
 
     const data = await respuestaPhp.json();
     console.log("✅ Respuesta recibida del microservicio:", data);
