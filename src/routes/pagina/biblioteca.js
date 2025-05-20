@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 
 const db = require('../../database/firebase');
+
+
+
 router.get('/Biblioteca', async (req, res) => {
   try {
     const query = (req.query.q || '').toLowerCase();

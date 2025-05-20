@@ -95,6 +95,19 @@ body {
     text-decoration: none;
 }
 
+.form-buttons button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    text-align: center;
+    text-decoration: none;
+}
+
+
 .form-buttons .login-btn {
     background-color: #137c4b;
     color: white;

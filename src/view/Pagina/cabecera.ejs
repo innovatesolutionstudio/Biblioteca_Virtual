@@ -61,7 +61,7 @@
 
     <nav>
       <a href="/">Inicio</a>
-      <a href="biblioteca">Biblioteca</a>
+      <a href="/Biblioteca">Biblioteca</a>
       <a href="Asistente">Asistente</a>
       <a href="Galeria">Galería</a>
       <a href="Nuestra-Bolivia">Nuestra Bolivia</a>
@@ -69,7 +69,14 @@
     </nav>
 
     <div class="auth">
-      <a href="#">Iniciar sesión</a>
+      
+    <% if (session && session.user) { %>
+      <button class="register">Ver Perfil</button>
+      
+    <% } else { %>
+      <a href="/login">Iniciar sesión</a>
       <button class="register">Regístrate</button>
+    <% } %>
     </div>
+
   </header>

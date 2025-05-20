@@ -1,111 +1,366 @@
-
 <!--Cabecera-->
 <%- include('../Pagina/cabecera.ejs') %>
 
 <section class="modulo-historico">
-    <h2 class="titulo-historico">Evolución Histórica de Bolivia</h2>
-  
-    <div class="contenedor-historico">
-      <!-- Gráfico principal -->
-      <div class="grafico-principal">
-        
-        <canvas id="graficoBarra"></canvas>
-      </div>
-  
-      <!-- Filtros laterales -->
-      <aside class="filtros-historicos">
-        <div class="filtro">
-          <label>Rango de Años</label>
-          <input type="date" value="1850-05-12">
-          <input type="date" value="1900-05-12">
-        </div>
-        <div class="filtro">
-          <label>Ubicación Geográfica</label>
-          <select><option>La Paz</option></select>
-          <select><option>Sucre</option></select>
-        </div>
-        <div class="filtro">
-          <label>Categoría de Datos</label>
-          <select><option>Economía</option></select>
-        </div>
-        <div class="resumen-filtros">
-          <p><strong>El usuario seleccionó:</strong></p>
-          <ul>
-            <li>✅ Año: 1850-1900</li>
-            <li>✅ Ubicación: Bolivia completa</li>
-            <li>✅ Categoría: Economía</li>
-          </ul>
-          <button class="boton-generar">Generar</button>
-        </div>
-      </aside>
-    </div>
-  
-    <!-- Métricas inferiores -->
-    <div class="metricas-historicas">
-      <div class="metrica">
-        <h4>Payment issues</h4>
-        <canvas id="graficoBarraMini"></canvas>
-        <p>Total number of errors: <strong>19</strong></p>
-      </div>
-      <div class="metrica">
-        <h4>Success rate</h4>
-        <canvas id="graficoDona"></canvas>
-        <p><strong>98%</strong> de éxito</p>
-      </div>
-      <div class="metrica">
-        <h4>Payment issues</h4>
-        <canvas id="graficoBarraMini2"></canvas>
-        <p>Total number of errors: <strong>19</strong></p>
-      </div>
-    </div>
-  </section>
-  
-  <!-- Chart.js v4 -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-  const graficoBarra = new Chart(document.getElementById('graficoBarra'), {
-    type: 'bar',   
-    data: {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-      datasets: [
-        { label: 'Job View', data: [40, 60, 80, 55, 40, 65, 70, 90, 75, 50, 60, 70], backgroundColor: '#cfd8dc' },
-        { label: 'Job Applied', data: [30, 50, 70, 50, 35, 60, 60, 77, 60, 45, 50, 65], backgroundColor: '#4caf50' }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: 'top' }, title: { display: false } }
+  <h2 class="titulo-historico">Evolución Histórica de la Inflación en Bolivia</h2>
 
-    }
-  });
-  
-  new Chart(document.getElementById('graficoBarraMini'), {
-    type: 'bar',
-    data: {
-      labels: ['1', '5', '3', '10'],
-      datasets: [{ label: 'Errores', data: [1, 5, 3, 10], backgroundColor: ['#f9a825', '#ef6c00', '#ab47bc', '#26c6da'] }]
-    },
-    options: { plugins: { legend: { display: false } } }
-  });
-  
-  new Chart(document.getElementById('graficoBarraMini2'), {
-    type: 'bar',
-    data: {
-      labels: ['1', '5', '3', '10'],
-      datasets: [{ label: 'Errores', data: [1, 5, 3, 10], backgroundColor: ['#f9a825', '#ef6c00', '#ab47bc', '#26c6da'] }]
-    },
-    options: { plugins: { legend: { display: false } } }
-  });
-  
-  new Chart(document.getElementById('graficoDona'), {
-    type: 'doughnut',
-    data: {
-      labels: ['Unsuccessful', 'Successful'],
-      datasets: [{ data: [1, 150], backgroundColor: ['#e0e0e0', '#4caf50'] }]
-    },
-    options: { cutout: '70%', plugins: { legend: { display: false } } }
-  });
-  </script>
-  
-<!--Pie de pagina -->
-<%- include('../Pagina/footer.ejs') %>
+  <div class="contenedor-historico">
+    <!-- Gráfico principal -->
+    <div class="grafico-principal">
+      <canvas id="graficoBarra"></canvas>
+    </div>
+
+    <aside class="filtros-historicos">
+      <form id="formFiltros" class="filtro">
+<div id="mensajeGeneral" style="display: none;
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 12px 16px;
+  border-left: 5px solid #c62828;
+  border-radius: 4px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  margin: 10px 0;
+  position: relative;">
+  <span style="margin-right: 8px;">❌</span>
+  <span id="textoMensajeGeneral">Hubo un error al cargar los datos. Por favor, verifica tu conexión o intenta nuevamente.</span>
+</div>
+
+        <label for="anio">Selecciona un año:</label>
+        <select name="anio" id="anio">
+          <% aniosDisponibles.forEach(anio => { %>
+            <option value="<%= anio %>" <%= anio == anioSeleccionado ? 'selected' : '' %>><%= anio %></option>
+          <% }) %>
+        </select>
+
+        <label for="departamentoSelector">Departamento:</label>
+        <select id="departamentoSelector" name="departamento"></select>
+
+        <label for="indicadorPoblacionSelector">Indicador de Población:</label>
+        <select id="indicadorPoblacionSelector" name="indicadorPoblacion"></select>
+
+        <label for="indicadorPobrezaSelector">Indicador de Pobreza:</label>
+        <select id="indicadorPobrezaSelector" name="indicadorPobreza"></select>
+
+        <button type="submit" class="boton-generar">Generar</button>
+        <% if (session && session.user) { %>
+          <button type="button" class="boton-generar" onclick="exportarPDF()">Exportar PDF</button>
+        <% } else { %>
+          <button type="button" class="boton-generar" onclick="window.location.href='/login'">Inicia sesión para exportar</button>
+        <% } %>
+
+
+      </form>
+
+      <div class="resumen-filtros">
+        <p><strong>Seleccionado:</strong></p>
+        <ul>
+          <li>✅ Año: <span id="resumenAnio"><%= anioSeleccionado || 'Todos' %></span></li>
+          <li>✅ Departamento: <span id="resumenDepartamento">-</span></li>
+          <li>✅ Indicador de Población: <span id="resumenIndicador">-</span></li>
+          <li>✅ Indicador de Pobreza: <span id="resumenIndicadorPobreza">-</span></li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Métricas inferiores -->
+  <div class="metricas-historicas">
+    <div class="metrica">
+      <h4>Población por Municipio</h4>
+      <canvas id="graficoBarraMini"></canvas>
+    </div>
+
+    <div class="metrica">
+      <h4>Pobreza por Municipio</h4>
+      <canvas id="graficoDona"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+  const FLASK_HOST = '<%= flaskHost %>';
+
+    async function exportarPDF() {
+      const isAuthenticated = <%= session && session.user ? 'true' : 'false' %>;
+      if (!isAuthenticated) {
+        const exportUrl = window.location.pathname + window.location.search;
+        sessionStorage.setItem('pendingExport', '1');
+        sessionStorage.setItem('returnTo', exportUrl);
+        window.location.href = "/login";
+        return;
+      }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const anio = document.getElementById('anio').value;
+    const dep = document.getElementById('departamentoSelector').value;
+    const indPob = document.getElementById('indicadorPoblacionSelector').value;
+    const indPobrez = document.getElementById('indicadorPobrezaSelector').value;
+
+    const fechaHoy = new Date().toLocaleDateString();
+
+    // Encabezado principal
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("Informe de Evolución Histórica", 105, 15, { align: 'center' });
+    doc.setLineWidth(0.5);
+    doc.line(10, 18, 200, 18);
+
+    // Caja de información
+    doc.setFillColor(240);
+    doc.rect(10, 22, 190, 20, 'F');
+    doc.setFontSize(10);
+    doc.setTextColor(50);
+    doc.text(`Año: ${anio}`, 12, 28);
+    doc.text(`Departamento: ${dep}`, 120, 28); // mejor alineado a la derecha
+
+    doc.text(`Indicador Población:`, 12, 34);
+    doc.setFont("helvetica", "normal");
+    doc.text(doc.splitTextToSize(indPob, 85), 50, 34); // Salto si es largo
+
+    doc.setFont("helvetica", "bold");
+    doc.text(`Indicador Pobreza:`, 12, 40);
+    doc.setFont("helvetica", "normal");
+    doc.text(doc.splitTextToSize(indPobrez, 85), 50, 40);
+
+
+    // Función para insertar un gráfico con título
+      const addCanvasImage = async (canvasId, titulo, posY) => {
+        const spacingTitleToImage = 6;
+        const imageHeight = 50;
+        const spacingAfterImage = 20;
+
+        // Título
+        doc.setFontSize(12);
+        doc.setTextColor(0);
+        doc.setFont("helvetica", "bold");
+        doc.text(titulo, 105, posY, { align: 'center' });
+
+        // Imagen
+        const canvas = document.getElementById(canvasId);
+        const imgData = canvas.toDataURL('image/png');
+        doc.addImage(imgData, 'PNG', 10, posY + spacingTitleToImage, 190, imageHeight);
+
+        // Devuelve la posición final para continuar
+        return posY + spacingTitleToImage + imageHeight + spacingAfterImage;
+      };
+
+      await addCanvasImage('graficoBarra', "Gráfico 1: Inflación", 48);
+      await addCanvasImage('graficoBarraMini', "Gráfico 2: Población", 114);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await addCanvasImage('graficoDona', "Gráfico 3: Pobreza", 176);
+
+
+    // Pie de página
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text(`Generado el ${fechaHoy} por Biblioteca Virtual`, 105, 285, { align: 'center' });
+
+    doc.save(`reporte_${dep}_${anio}.pdf`);
+  }
+
+  async function cargarFiltros() {
+    const depSelect = document.getElementById('departamentoSelector');
+    const indPobSelect = document.getElementById('indicadorPoblacionSelector');
+    const indPobrezSelect = document.getElementById('indicadorPobrezaSelector');
+
+    const departamentos = ['CHUQUISACA', 'LA PAZ', 'COCHABAMBA', 'ORURO', 'POTOSÍ', 'TARIJA', 'SANTA CRUZ', 'BENI', 'PANDO'];
+    departamentos.forEach(dep => {
+      const option = document.createElement('option');
+      option.value = dep;
+      option.textContent = dep;
+      depSelect.appendChild(option);
+    });
+
+    const resPob = await fetch(`${FLASK_HOST}/api/indicadores_poblacion`);
+    const indicadoresPob = await resPob.json();
+    indicadoresPob.forEach(ind => {
+      const option = document.createElement('option');
+      option.value = ind;
+      option.textContent = ind;
+      indPobSelect.appendChild(option);
+    });
+
+    const resPobreza = await fetch(`${FLASK_HOST}/api/indicadores_pobreza`);
+    const indicadoresPobreza = await resPobreza.json();
+    indicadoresPobreza.forEach(ind => {
+      const option = document.createElement('option');
+      option.value = ind;
+      option.textContent = ind;
+      indPobrezSelect.appendChild(option);
+    });
+  }
+
+ async function generarGraficoInflacion(anio) {
+  try {
+    ocultarErrorGeneral();
+    const res = await fetch(`${FLASK_HOST}/api/inflacion?anio=${anio}`);
+    if (!res.ok) throw new Error('Error de red');
+    const datosInflacion = await res.json();
+
+    if (!datosInflacion || datosInflacion.length === 0) throw new Error('Datos vacíos');
+
+    const etiquetas = datosInflacion.map(d => d.Year);
+    const valores = datosInflacion.map(d => d.Inflation);
+    const ctx = document.getElementById('graficoBarra').getContext('2d');
+
+    if (window.chartInflacion) window.chartInflacion.destroy();
+
+    window.chartInflacion = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: etiquetas,
+        datasets: [{ label: 'Inflación (%)', data: valores, backgroundColor: '#4caf50' }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top' },
+          title: { display: true, text: 'Inflación en Bolivia' }
+        }
+      }
+    });
+  } catch (error) {
+    mostrarErrorGeneral();
+    console.error('❌ Error al cargar inflación:', error);
+  }
+}
+
+  async function generarGraficoPoblacion(departamento, indicador) {
+  try {
+    ocultarErrorGeneral();
+    const res = await fetch(`${FLASK_HOST}/api/poblacion?departamento=${encodeURIComponent(departamento)}&indicador=${encodeURIComponent(indicador)}`);
+    if (!res.ok) throw new Error('Fallo al consultar población');
+
+    const datos = await res.json();
+    if (!datos || !datos.labels || datos.labels.length === 0) throw new Error('Datos vacíos');
+
+    const ctx = document.getElementById('graficoBarraMini').getContext('2d');
+    if (window.chartPoblacion) window.chartPoblacion.destroy();
+
+    window.chartPoblacion = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: datos.labels,
+        datasets: datos.tipo === 'comparativo' ? [
+          { label: 'Hombres', data: datos.hombres, backgroundColor: '#2196f3' },
+          { label: 'Mujeres', data: datos.mujeres, backgroundColor: '#ff9800' }
+        ] : [
+          { label: indicador, data: datos.valores, backgroundColor: '#4caf50' }
+        ]
+      }
+    });
+  } catch (error) {
+    mostrarErrorGeneral();
+    console.error('❌ Error al generar gráfico de población:', error);
+  }
+}
+
+
+  async function generarGraficoPobreza(departamento, indicador) {
+  try {
+    ocultarErrorGeneral();
+    const res = await fetch(`${FLASK_HOST}/api/pobreza?departamento=${encodeURIComponent(departamento)}&indicador=${encodeURIComponent(indicador)}`);
+    if (!res.ok) throw new Error('Fallo al consultar pobreza');
+
+    const datos = await res.json();
+    if (!datos || !datos.labels || datos.labels.length === 0) throw new Error('Datos vacíos');
+
+    const ctx = document.getElementById('graficoDona').getContext('2d');
+    if (window.chartPobreza) window.chartPobreza.destroy();
+
+    window.chartPobreza = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: datos.labels,
+        datasets: datos.tipo === 'comparativo' ? [
+          { label: 'Hombres', data: datos.hombres, borderColor: '#2196f3', fill: false },
+          { label: 'Mujeres', data: datos.mujeres, borderColor: '#ff9800', fill: false }
+        ] : [
+          { label: indicador, data: datos.valores, borderColor: '#4caf50', fill: false }
+        ]
+      }
+    });
+  } catch (error) {
+    mostrarErrorGeneral();
+    console.error('❌ Error al generar gráfico de pobreza:', error);
+  }
+}
+
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    await cargarFiltros();
+
+    const form = document.getElementById('formFiltros');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const anio = document.getElementById('anio').value;
+      const departamento = document.getElementById('departamentoSelector').value;
+      const indicadorPoblacion = document.getElementById('indicadorPoblacionSelector').value;
+      const indicadorPobreza = document.getElementById('indicadorPobrezaSelector').value;
+
+      await generarGraficoInflacion(anio);
+      await generarGraficoPoblacion(departamento, indicadorPoblacion);
+      await generarGraficoPobreza(departamento, indicadorPobreza);
+
+      document.getElementById('resumenAnio').textContent = anio;
+      document.getElementById('resumenDepartamento').textContent = departamento;
+      document.getElementById('resumenIndicador').textContent = indicadorPoblacion;
+      document.getElementById('resumenIndicadorPobreza').textContent = indicadorPobreza;
+      document.getElementById('indicadorPobrezaTexto').textContent = indicadorPobreza;
+    });
+
+    setTimeout(async () => {
+      const anioInicial = document.getElementById('anio').value;
+      const departamentoInicial = document.getElementById('departamentoSelector').value;
+      const indicadorPoblacion = document.getElementById('indicadorPoblacionSelector').value;
+      const indicadorPobreza = document.getElementById('indicadorPobrezaSelector').value;
+
+      if (anioInicial && departamentoInicial && indicadorPoblacion && indicadorPobreza) {
+        await generarGraficoInflacion(anioInicial);
+        await generarGraficoPoblacion(departamentoInicial, indicadorPoblacion);
+        await generarGraficoPobreza(departamentoInicial, indicadorPobreza);
+
+        document.getElementById('resumenAnio').textContent = anioInicial;
+        document.getElementById('resumenDepartamento').textContent = departamentoInicial;
+        document.getElementById('resumenIndicador').textContent = indicadorPoblacion;
+        document.getElementById('resumenIndicadorPobreza').textContent = indicadorPobreza;
+        document.getElementById('indicadorPobrezaTexto').textContent = indicadorPobreza;
+      }
+      if (sessionStorage.getItem('pendingExport') === '1') {
+        sessionStorage.removeItem('pendingExport');
+        setTimeout(() => {
+          exportarPDF();
+        }, 800); // Espera breve para que carguen los gráficos
+      }
+    }, 500);
+  }); 
+function mostrarErrorGeneral(texto = "Hubo un error al cargar los datos. Por favor, verifica tu conexión o intenta nuevamente.") {
+  const msg = document.getElementById('mensajeGeneral');
+  const textoEl = document.getElementById('textoMensajeGeneral');
+  if (msg && textoEl) {
+    textoEl.textContent = texto;
+    msg.style.display = 'block';
+    setTimeout(() => {
+      msg.style.display = 'none';
+    }, 6000);
+  }
+}
+
+
+function ocultarErrorGeneral() {
+  const msg = document.getElementById('mensajeGeneral');
+  if (msg) msg.style.display = 'none';
+}
+
+
+</script>
+
+<!--Pie de página-->
+<%- include('../Pagina/footer.ejs') %>  
