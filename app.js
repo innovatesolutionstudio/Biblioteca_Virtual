@@ -47,6 +47,8 @@ app.use((req, res, next) => {
   next();
 });
 
+const setServiceUrl = require('./src/middlewares/setServiceUrl');
+app.use(setServiceUrl);
 
 
 // Rutas para la pagina principal 
@@ -69,10 +71,7 @@ app.use(chatbotRoutes);
 // Rutas
 
 const ConfigRoutes = require('./src/routes/config/config');
-const setServiceUrl = require('./src/middlewares/setServiceUrl');
-
 app.use(ConfigRoutes);
-app.use(setServiceUrl);
 
 
 

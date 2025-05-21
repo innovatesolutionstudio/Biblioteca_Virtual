@@ -57,6 +57,7 @@ router.get('/Biblioteca', async (req, res) => {
       query: req.query.q,
       categoria,
       generos
+      
     });
   } catch (error) {
     console.error('Error al cargar libros:', error);

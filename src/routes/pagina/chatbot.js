@@ -1,5 +1,12 @@
 const express = require('express'); 
 const router = express.Router();
+// Ruta para ChatBot
+router.get('/Asistente', (req, res) => {
+  res.render('Chatbot/chatbot',{
+    session: req.session
+  });
+  
+});
 
 router.post('/api/chatbot', async (req, res) => {
   try {

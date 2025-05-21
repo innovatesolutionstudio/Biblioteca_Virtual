@@ -50,12 +50,6 @@ const imagen = {
 });
 
 
-// Ruta para ChatBot
-router.get('/Asistente', (req, res) => {
-  res.render('Chatbot/chatbot',{
-    session: req.session
-  });
-});
 
 // Ruta para Galeria de imagenes generadas
 router.get('/Galeria', (req, res) => {

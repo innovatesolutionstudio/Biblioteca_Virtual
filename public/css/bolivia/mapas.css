@@ -75,3 +75,25 @@
     background: #1d432b;
   }
   
+
+  .modulo-mapas-wrapper {
+  width: 100%;
+  height: 100vh; /* altura de pantalla completa */
+  overflow: hidden;
+  padding: 0;
+  margin: 0 auto;
+}
+
+.modulo-mapas-conectado {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+html, body {
+  background-color: #ffffff !important;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}

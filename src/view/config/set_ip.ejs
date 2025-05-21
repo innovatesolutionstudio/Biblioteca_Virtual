@@ -112,51 +112,76 @@
       <button type="button" class="toggle-btn btn-connect" onclick="confirmToggle('phpInput', this, 'phpHost')">Conectar</button>
     </div>
   </div>
+<script>
+  function confirmToggle(inputId, button, fieldName) {
+    const input = document.getElementById(inputId);
+    const isConnecting = button.textContent === 'Conectar';
 
-  <script>
-    function confirmToggle(inputId, button, fieldName) {
-      const input = document.getElementById(inputId);
-      const isConnecting = !input.disabled;
-      const action = isConnecting ? 'conectar' : 'desconectar';
+    Swal.fire({
+      title: `¿Estás seguro de ${isConnecting ? 'conectar' : 'desconectar'}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (!result.isConfirmed) return;
 
-      Swal.fire({
-        title: `¿Estás seguro de ${action}?`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Sí',
-        cancelButtonText: 'Cancelar'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          input.disabled = isConnecting;
+      if (isConnecting) {
+        const url = input.value.trim();
+        if (!url) {
+          Swal.fire('❌ Error', 'Debes ingresar una IP válida.', 'error');
+          return;
+        }
 
-          if (isConnecting) {
-            button.textContent = 'Desconectar';
+        fetch('/configurar-ip/individual', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [fieldName]: url })
+        })
+          .then(res => res.json())
+          .then(data => {
+            input.disabled = true;
+            button.textContent = 'Cambiar Ruta';
             button.classList.remove('btn-connect');
             button.classList.add('btn-disconnect');
-          } else {
+
+            const statusSpan = input.previousElementSibling;
+            statusSpan.classList.remove('offline');
+            statusSpan.classList.add('online');
+            statusSpan.innerHTML = '🟢 Conectado';
+          })
+          .catch(() => {
+            Swal.fire('❌ Error', 'No se pudo guardar la IP', 'error');
+          });
+
+      } else {
+        fetch('/configurar-ip/individual', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [fieldName]: '' })
+        })
+          .then(res => res.json())
+          .then(data => {
+            input.disabled = false;
+            input.value = '';
             button.textContent = 'Conectar';
             button.classList.remove('btn-disconnect');
             button.classList.add('btn-connect');
-          }
 
-          // Enviar IP actualizada automáticamente
-          if (isConnecting) {
-            fetch('/configurar-ip/individual', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ [fieldName]: input.value })
-            })
-            .then(res => res.json())
-            .then(data => {
-              Swal.fire('✅ Guardado', data.mensaje, 'success');
-            })
-            .catch(() => {
-              Swal.fire('❌ Error', 'No se pudo guardar la IP', 'error');
-            });
-          }
-        }
-      });
-    }
-  </script>
-</body>
+            const statusSpan = input.previousElementSibling;
+            statusSpan.classList.remove('online');
+            statusSpan.classList.add('offline');
+            statusSpan.innerHTML = '🔴 Desconectado';
+          })
+          .catch(() => {
+            Swal.fire('❌ Error', 'No se pudo desconectar', 'error');
+          });
+      }
+    });
+  }
+</script>
+
 </html>
+
+
+
