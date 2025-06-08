@@ -4,11 +4,16 @@ import pandas as pd
 
 import os
 from dotenv import load_dotenv
+from flask import render_template
 
 load_dotenv()
 # Validación de variables de entorno
 FLASK_HOST = os.getenv('FLASK_HOST')
 FLASK_PORT = os.getenv('FLASK_PORT')
+UPLOAD_FOLDER = 'uploads/dataset'
+ALLOWED_EXTENSIONS = {'xls', 'xlsx'}
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 if not FLASK_HOST or not FLASK_PORT:
     raise EnvironmentError("Faltan variables de entorno FLASK_HOST o FLASK_PORT.")
@@ -20,6 +25,7 @@ except ValueError:
 
 app = Flask(__name__)
 CORS(app)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER 
 
 # Archivos
 FILE_PATH_INFLACION = 'uploads/dataset/inflacion_bolivia.xls'
@@ -144,7 +150,6 @@ def get_poblacion():
         }
 
     return jsonify(data)
-
 # ===========================
 # API: Indicadores de Pobreza
 # ===========================
@@ -211,6 +216,79 @@ def get_pobreza():
         })
     else:
         return jsonify({'error': 'Indicador no disponible'}), 400
+# ===========================
+# API: Previsualizar dataset
+# ===========================
+@app.route('/api/previsualizar-dataset', methods=['POST'])
+def previsualizar_dataset():
+    archivo = request.files.get('archivo')
+    tipo = request.form.get('tipo')
+
+    if not archivo or not tipo:
+        return jsonify({'error': 'Faltan el archivo o el tipo de dataset'}), 400
+
+    # Validar el tipo
+    tipo = tipo.lower()
+    estructuras_esperadas = {
+        'inflacion': ['Country Name', 'Country Code', 'Indicator Name', 'Indicator Code'],
+        'poblacion': ['DEPARTAMENTO Y MUNICIPIO', 'POBLACIÓN EMPADRONADA 2001', 'POBLACIÓN EMPADRONADA 2012'],
+        'pobreza': ['DEPARTAMENTO Y MUNICIPIO', 'POBLACIÓN TOTAL (Objeto de estudio)1', 'Porcentaje de Población Pobre']
+    }
+
+    columnas_requeridas = estructuras_esperadas.get(tipo)
+    if not columnas_requeridas:
+        return jsonify({'error': 'Tipo de dataset no reconocido'}), 400
+
+    try:
+        df = pd.read_excel(archivo, header=2 if tipo != 'inflacion' else 3)
+
+        df.columns = df.columns.astype(str).str.strip().str.replace('\n', ' ').str.replace('\r', '', regex=False)
+        columnas = df.columns.tolist()
+
+        # Validar que existan todas las columnas requeridas
+        for col in columnas_requeridas:
+            if not any(col.lower() in c.lower() for c in columnas):
+                return jsonify({'error': f'El archivo no contiene la columna esperada: "{col}"'}), 400
+
+        filas = df.head(5).astype(str).replace('nan', '').values.tolist()
+
+        return jsonify({'columnas': columnas, 'filas': filas})
+    except Exception as e:
+        print(f'❌ Error al previsualizar dataset: {e}')
+        return jsonify({'error': f'Error al procesar el archivo: {str(e)}'}), 500
+# ===========================
+# API: subir dataset
+# ===========================
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@app.route('/api/subir-dataset', methods=['POST'])
+def subir_dataset():
+    if 'archivo' not in request.files or 'tipo' not in request.form:
+        return jsonify({'error': 'Archivo o tipo faltante'}), 400
+
+    archivo = request.files['archivo']
+    tipo = request.form.get('tipo')
+
+    if archivo.filename == '':
+        return jsonify({'error': 'Nombre de archivo vacío'}), 400
+
+    if archivo and allowed_file(archivo.filename):
+        filename_map = {
+            'inflacion': 'inflacion_bolivia.xls',
+            'poblacion': 'censo_poblacion.xlsx',
+            'pobreza': 'censo_pobreza.xlsx'
+        }
+
+        if tipo not in filename_map:
+            return jsonify({'error': 'Tipo de dataset inválido'}), 400
+
+        ruta = os.path.join(app.config['UPLOAD_FOLDER'], filename_map[tipo])
+        archivo.save(ruta)
+        return jsonify({'mensaje': 'Archivo subido correctamente'}), 200
+
+    return jsonify({'error': 'Formato de archivo no permitido'}), 400
 
 
 # ========================================

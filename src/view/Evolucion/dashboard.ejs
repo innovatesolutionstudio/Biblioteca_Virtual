@@ -12,6 +12,20 @@
 
     <aside class="filtros-historicos">
       <form id="formFiltros" class="filtro">
+      <div id="mensajeGeneral" style="display: none;
+        background-color: #ffebee;
+        color: #c62828;
+        padding: 12px 16px;
+        border-left: 5px solid #c62828;
+        border-radius: 4px;
+        font-weight: 500;
+        font-family: 'Inter', sans-serif;
+        margin: 10px 0;
+        position: relative;">
+        <span style="margin-right: 8px;">❌</span>
+        <span id="textoMensajeGeneral">Hubo un error al cargar los datos. Por favor, verifica tu conexión o intenta nuevamente.</span>
+      </div>
+
         <label for="anio">Selecciona un año:</label>
         <select name="anio" id="anio">
           <% aniosDisponibles.forEach(anio => { %>
@@ -29,7 +43,13 @@
         <select id="indicadorPobrezaSelector" name="indicadorPobreza"></select>
 
         <button type="submit" class="boton-generar">Generar</button>
-        <button type="button" class="boton-exportar" onclick="exportarPDF()">Exportar PDF</button>
+        <% if (session && session.user) { %>
+          <button type="button" class="boton-generar" onclick="exportarPDF()">Exportar PDF</button>
+          <button type="button" class="boton-generar" onclick="window.location.href='/Subir-Dataset'">Subir nuevo dataset</button>
+        <% } else { %>
+          <button type="button" class="boton-generar" onclick="window.location.href='/login'">Inicia sesión para exportar</button>
+          <button type="button" class="boton-generar" onclick="window.location.href='/login'">Inicia sesión para subir dataset</button>
+        <% } %>
       </form>
 
       <div class="resumen-filtros">
@@ -43,7 +63,6 @@
       </div>
     </aside>
   </div>
-
   <!-- Métricas inferiores -->
   <div class="metricas-historicas">
     <div class="metrica">
@@ -62,81 +81,113 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
 <script>
   const FLASK_HOST = '<%= flaskHost %>';
 
-    async function exportarPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+  async function exportarPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
 
-    const anio = document.getElementById('anio').value;
-    const dep = document.getElementById('departamentoSelector').value;
-    const indPob = document.getElementById('indicadorPoblacionSelector').value;
-    const indPobrez = document.getElementById('indicadorPobrezaSelector').value;
+  const anio = document.getElementById('anio').value;
+  const dep = document.getElementById('departamentoSelector').value;
+  const indPob = document.getElementById('indicadorPoblacionSelector').value;
+  const indPobrez = document.getElementById('indicadorPobrezaSelector').value;
+  const fechaHoy = new Date().toLocaleDateString();
 
-    const fechaHoy = new Date().toLocaleDateString();
+  // Estilo cabecera
+  doc.setFillColor(0, 102, 204); // Azul Biblioteca
+  doc.rect(0, 0, 210, 20, 'F');
+  doc.setFontSize(14);
+  doc.setTextColor(255);
+  doc.setFont("helvetica", "bold");
+  doc.text("Biblioteca Virtual - Informe de Evolución Histórica", 105, 12, { align: 'center' });
 
-    // Encabezado principal
-    doc.setFontSize(18);
-    doc.setFont("helvetica", "bold");
-    doc.text("Informe de Evolución Histórica", 105, 15, { align: 'center' });
-    doc.setLineWidth(0.5);
-    doc.line(10, 18, 200, 18);
+  // Subtítulo
+  doc.setFontSize(11);
+  doc.setTextColor(0);
+  doc.setFont("helvetica", "bold");
+  doc.text("Datos seleccionados", 105, 26, { align: 'center' });
+  doc.setLineWidth(0.4);
+  doc.line(10, 28, 200, 28);
 
-    // Caja de información
-    doc.setFillColor(240);
-    doc.rect(10, 22, 190, 20, 'F');
+  //Información básica
+  doc.setFillColor(245);
+  doc.rect(10, 30, 190, 22, 'F');
+  doc.setFontSize(10);
+  doc.setTextColor(50);
+  doc.text(`Año de inflacón: ${anio}`, 12, 36);
+  doc.text(`Departamento: ${dep}`, 110, 36);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Indicador Población:`, 12, 42);
+  doc.setFont("helvetica", "normal");
+  doc.text(doc.splitTextToSize(indPob, 85), 50, 42);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Indicador Pobreza:`, 12, 48);
+  doc.setFont("helvetica", "normal");
+  doc.text(doc.splitTextToSize(indPobrez, 85), 50, 48);
+
+  const descripciones = {
+    inflacion: `Este gráfico muestra la variación de la inflación en Bolivia a lo largo de una década seleccionada a partir del año ${anio}. Los datos son proporcionados por el INE y reflejan las tasas anuales de inflación.`,
+    poblacion: `El siguiente gráfico presenta el indicador seleccionado de población "${indPob}" en el departamento de ${dep}, segmentado por municipio. Este análisis permite entender la distribución demográfica en la región.`,
+    pobreza: `Aquí se visualiza el indicador de pobreza "${indPobrez}" para el departamento de ${dep}. Esta información es crucial para el diseño de políticas públicas que reduzcan las brechas sociales.`
+  };
+  const addDescripcion = (texto, posY) => {
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    doc.setTextColor(50);
-    doc.text(`Año: ${anio}`, 12, 28);
-    doc.text(`Departamento: ${dep}`, 120, 28); // mejor alineado a la derecha
+    const textoDividido = doc.splitTextToSize(texto, 180);
+    if (posY + textoDividido.length * 6 > 270) {
+      doc.addPage();
+      posY = 20;
+    }
+    doc.text(textoDividido, 15, posY);
+    return posY + textoDividido.length * 6 + 10;
+  };
 
-    doc.text(`Indicador Población:`, 12, 34);
-    doc.setFont("helvetica", "normal");
-    doc.text(doc.splitTextToSize(indPob, 85), 50, 34); // Salto si es largo
+  const addCanvasImage = async (canvasId, titulo, posY) => {
+    const spacing = 6;
+    const imageHeight = 55;
+    const totalHeight = imageHeight + spacing + 10;
 
+    if (posY + totalHeight > 270) {
+      doc.addPage();
+      posY = 20;
+    }
+
+    doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    doc.text(`Indicador Pobreza:`, 12, 40);
-    doc.setFont("helvetica", "normal");
-    doc.text(doc.splitTextToSize(indPobrez, 85), 50, 40);
+    doc.setTextColor(33, 33, 33);
+    doc.text(titulo, 105, posY, { align: 'center' });
 
+    const canvas = document.getElementById(canvasId);
+    const imgData = canvas.toDataURL('image/png');
+    doc.addImage(imgData, 'PNG', 10, posY + spacing, 190, imageHeight);
 
-    // Función para insertar un gráfico con título
-      const addCanvasImage = async (canvasId, titulo, posY) => {
-        const spacingTitleToImage = 6;
-        const imageHeight = 50;
-        const spacingAfterImage = 20;
+    return posY + spacing + imageHeight + 10;
+  };
 
-        // Título
-        doc.setFontSize(12);
-        doc.setTextColor(0);
-        doc.setFont("helvetica", "bold");
-        doc.text(titulo, 105, posY, { align: 'center' });
+  //Inserción dinámica
+  let posY = 60;
+  posY = await addCanvasImage('graficoBarra', "Gráfico 1: Inflación", posY);
+  posY = addDescripcion(descripciones.inflacion, posY);
 
-        // Imagen
-        const canvas = document.getElementById(canvasId);
-        const imgData = canvas.toDataURL('image/png');
-        doc.addImage(imgData, 'PNG', 10, posY + spacingTitleToImage, 190, imageHeight);
+  posY = await addCanvasImage('graficoBarraMini', "Gráfico 2: Población", posY);
+  posY = addDescripcion(descripciones.poblacion, posY);
 
-        // Devuelve la posición final para continuar
-        return posY + spacingTitleToImage + imageHeight + spacingAfterImage;
-      };
+  posY = await addCanvasImage('graficoDona', "Gráfico 3: Pobreza", posY);
+  posY = addDescripcion(descripciones.pobreza, posY);
 
-      await addCanvasImage('graficoBarra', "Gráfico 1: Inflación", 48);
-      await addCanvasImage('graficoBarraMini', "Gráfico 2: Población", 114);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await addCanvasImage('graficoDona', "Gráfico 3: Pobreza", 176);
-
-
-    // Pie de página
-    doc.setFontSize(8);
-    doc.setTextColor(100);
-    doc.text(`Generado el ${fechaHoy} por Biblioteca Virtual`, 105, 285, { align: 'center' });
-
-    doc.save(`reporte_${dep}_${anio}.pdf`);
+  // Pie de página elegante
+  doc.setFontSize(8);
+  doc.setTextColor(100);
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.text(`Página ${i} de ${pageCount}`, 200 - 40, 290);
+    doc.text(`Generado el ${fechaHoy} por Biblioteca Virtual`, 15, 290);
   }
 
+  doc.save(`reporte_${dep}_${anio}.pdf`);
+}
   async function cargarFiltros() {
     const depSelect = document.getElementById('departamentoSelector');
     const indPobSelect = document.getElementById('indicadorPoblacionSelector');
@@ -168,10 +219,15 @@
       indPobrezSelect.appendChild(option);
     });
   }
-
-  async function generarGraficoInflacion(anio) {
+ async function generarGraficoInflacion(anio) {
+  try {
+    ocultarErrorGeneral();
     const res = await fetch(`${FLASK_HOST}/api/inflacion?anio=${anio}`);
+    if (!res.ok) throw new Error('Error de red');
     const datosInflacion = await res.json();
+
+    if (!datosInflacion || datosInflacion.length === 0) throw new Error('Datos vacíos');
+
     const etiquetas = datosInflacion.map(d => d.Year);
     const valores = datosInflacion.map(d => d.Inflation);
     const ctx = document.getElementById('graficoBarra').getContext('2d');
@@ -192,11 +248,20 @@
         }
       }
     });
+  } catch (error) {
+    mostrarErrorGeneral();
+    console.error('❌ Error al cargar inflación:', error);
   }
-
+}
   async function generarGraficoPoblacion(departamento, indicador) {
+  try {
+    ocultarErrorGeneral();
     const res = await fetch(`${FLASK_HOST}/api/poblacion?departamento=${encodeURIComponent(departamento)}&indicador=${encodeURIComponent(indicador)}`);
+    if (!res.ok) throw new Error('Fallo al consultar población');
+
     const datos = await res.json();
+    if (!datos || !datos.labels || datos.labels.length === 0) throw new Error('Datos vacíos');
+
     const ctx = document.getElementById('graficoBarraMini').getContext('2d');
     if (window.chartPoblacion) window.chartPoblacion.destroy();
 
@@ -212,11 +277,20 @@
         ]
       }
     });
+  } catch (error) {
+    mostrarErrorGeneral();
+    console.error('❌ Error al generar gráfico de población:', error);
   }
-
+}
   async function generarGraficoPobreza(departamento, indicador) {
+  try {
+    ocultarErrorGeneral();
     const res = await fetch(`${FLASK_HOST}/api/pobreza?departamento=${encodeURIComponent(departamento)}&indicador=${encodeURIComponent(indicador)}`);
+    if (!res.ok) throw new Error('Fallo al consultar pobreza');
+
     const datos = await res.json();
+    if (!datos || !datos.labels || datos.labels.length === 0) throw new Error('Datos vacíos');
+
     const ctx = document.getElementById('graficoDona').getContext('2d');
     if (window.chartPobreza) window.chartPobreza.destroy();
 
@@ -230,9 +304,14 @@
         ] : [
           { label: indicador, data: datos.valores, borderColor: '#4caf50', fill: false }
         ]
-      },
+      }
     });
+  } catch (error) {
+    mostrarErrorGeneral();
+    console.error('❌ Error al generar gráfico de pobreza:', error);
   }
+}
+
 
   document.addEventListener('DOMContentLoaded', async () => {
     await cargarFiltros();
@@ -273,9 +352,29 @@
         document.getElementById('resumenIndicadorPobreza').textContent = indicadorPobreza;
         document.getElementById('indicadorPobrezaTexto').textContent = indicadorPobreza;
       }
+      if (sessionStorage.getItem('pendingExport') === '1') {
+        sessionStorage.removeItem('pendingExport');
+        setTimeout(() => {
+          exportarPDF();
+        }, 800); // Espera breve para que carguen los gráficos
+      }
     }, 500);
-  });
+  }); 
+function mostrarErrorGeneral(texto = "Hubo un error al cargar los datos. Por favor, verifica tu conexión o intenta nuevamente.") {
+  const msg = document.getElementById('mensajeGeneral');
+  const textoEl = document.getElementById('textoMensajeGeneral');
+  if (msg && textoEl) {
+    textoEl.textContent = texto;
+    msg.style.display = 'block';
+    setTimeout(() => {
+      msg.style.display = 'none';
+    }, 6000);
+  }
+}
+function ocultarErrorGeneral() {
+  const msg = document.getElementById('mensajeGeneral');
+  if (msg) msg.style.display = 'none';
+}
 </script>
-
 <!--Pie de página-->
 <%- include('../Pagina/footer.ejs') %>  
