@@ -1,67 +1,44 @@
 const express = require('express');
+const axios = require('axios');
 const router = express.Router();
-
-const db = require('../../database/firebase');
-
-
 
 router.get('/Biblioteca', async (req, res) => {
   try {
-    const query = (req.query.q || '').toLowerCase();
-    const categoria = (req.query.categoria || '').toLowerCase();
 
-    const librosSnapshot = await db.collection('libros').get();
-    const libros = [];
-    const generosSet = new Set();
+    const query = req.query.q || '';
+    const categoria = req.query.categoria || '';
 
-    librosSnapshot.forEach(doc => {
-      const data = doc.data();
-      const librosInternos = data.libros || {};
+const response = await axios.get('http://libros-service:5001/api/libros', {
 
-      for (const key in librosInternos) {
-        const libro = librosInternos[key];
-
-        const genero = libro.genero || '';
-        const libroFinal = {
-          id: doc.id,
-          titulo: libro.titulo || 'Sin título',
-          autor: libro.autor || 'Desconocido',
-          ano_publicacion: libro.ano_publicacion || 'N/A',
-          portada: data.portada || '/img/libros2.png',
-          documento: data.documento || '#',
-          genero: genero,
-          descripcion: libro.descripcion || ''
-        };
-
-        // Agregar género a set (sin duplicados, y en minúsculas uniformes)
-        if (genero.trim() !== '') {
-          generosSet.add(genero.trim());
-        }
-
-        // FILTRO POR BÚSQUEDA
-        const texto = (libroFinal.titulo + libroFinal.autor + libroFinal.descripcion).toLowerCase();
-        if (query && !texto.includes(query)) continue;
-
-        // FILTRO POR CATEGORÍA
-        if (categoria && genero.toLowerCase() !== categoria) continue;
-
-        libros.push(libroFinal);
-      }
+      params: { q: query, categoria: categoria }
     });
 
-    // Convertir Set a Array ordenado
-    const generos = Array.from(generosSet).sort();
+    const libros = response.data.libros;
+    const generos = [...new Set(libros.map(l => l.genero.trim().toLowerCase()))].sort();
 
     res.render('biblioteca/biblioteca', {
       libros,
-      query: req.query.q,
+      query,
       categoria,
       generos
-      
     });
   } catch (error) {
-    console.error('Error al cargar libros:', error);
-    res.status(500).send('Error al cargar libros');
+    console.error('Error solicitando libros al microservicio:', error.message);
+    res.status(500).send('Error al consultar libros');
+  }
+});
+
+
+// Ruta del servidor central que usa microservicio
+router.get('/Libro/:id', async (req, res) => {
+  try {
+const response = await axios.get(`http://libros-service:5001/api/libros/${req.params.id}`);
+    const libro = response.data.libro;
+
+    res.render('biblioteca/libro', { libro });
+  } catch (error) {
+    console.error('Error al obtener libro desde el microservicio:', error.message);
+    res.status(500).send('Error al cargar libro');
   }
 });
 

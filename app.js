@@ -2,27 +2,27 @@ const express = require('express');
 const app = express();
 const path = require('path');
 
-const session = require('express-session'); // ✅ Solo una vez
-require('dotenv').config(); // Variables de entorno
+const session = require('express-session'); 
+require('dotenv').config();
 
 
 // Middleware
-app.use(session({ secret: 'clave-secreta', resave: false, saveUninitialized: true }));
-
-
-
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+ 
 
 // Configurar motor de vistas (por ejemplo, EJS)
 app.set('views', path.join(__dirname, 'src/view'));
-app.set('view engine', 'ejs'); // O pug, hbs, etc. según estés usando
+app.set('view engine', 'ejs');
+
+
+
 // Acceso a documentos y portadas
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Middleware
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.urlencoded({ extended: true }));
-
 app.use(express.json());
+
+
 
 // Manejo de sesiones
 app.use(session({
@@ -34,18 +34,17 @@ app.use(session({
   }
 }));
 
-
-// Hace que la sesión esté disponible en todas las vistas EJS como `session`
 app.use((req, res, next) => {
   res.locals.session = req.session;
   next();
 });
  
-// Middleware para pasar la sesión a todas las vistas EJS
+// Middleware para evitar cacheo en rutas protegidas  ANTES de las rutas
 app.use((req, res, next) => {
-  res.locals.session = req.session;
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   next();
 });
+ 
 
 const setServiceUrl = require('./src/middlewares/setServiceUrl');
 app.use(setServiceUrl);
@@ -55,7 +54,7 @@ app.use(setServiceUrl);
 const paginaRoutes = require('./src/routes/pagina/pagina');
 const loginRoutes = require('./src/routes/login/login');
 const bibliotecaRoutes = require('./src/routes/pagina/biblioteca');
-const libroRoutes = require('./src/routes/pagina/libro');
+
 const dashboarRoutes = require('./src/routes/dashboard/dashboard');
 const chatbotRoutes = require('./src/routes/pagina/chatbot');
 
@@ -63,27 +62,17 @@ const chatbotRoutes = require('./src/routes/pagina/chatbot');
 app.use('/', paginaRoutes);
 app.use(loginRoutes);
 app.use(bibliotecaRoutes);
-app.use(libroRoutes);
+
 app.use(dashboarRoutes);
 app.use(chatbotRoutes);
 
 
 // Rutas
-
 const ConfigRoutes = require('./src/routes/config/config');
 app.use(ConfigRoutes);
 
-
-
-
-
 const rt12 = require('./src/routes/rt12/crud_libros');
 app.use(rt12);
-
-//rutas de improvisacion
-
-
-
 
 // Puerto
 const PORT = process.env.PORT || 3000;

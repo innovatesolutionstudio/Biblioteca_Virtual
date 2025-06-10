@@ -35,6 +35,9 @@
     <!--Estilos - pagina mantenimiento-->
     <link rel="stylesheet" href="/css/config/mantenimiento.css">
 
+    <!---->
+   <link rel="stylesheet" href="/css/pagina/perfil.css">
+
     <style>
     * {
       margin: 0;
@@ -71,15 +74,14 @@
       <a href="Evolucion-Historica">Evolucion Historica</a>
     </nav>
 
-    <div class="auth">
-      
-    <% if (session && session.user) { %>
-      <button class="register">Ver Perfil</button>
-      
-    <% } else { %>
-      <a href="/login">Iniciar sesión</a>
-      <button class="register">Regístrate</button>
-    <% } %>
-    </div>
+     <div class="auth">
+        <% if (session && session.user) { %>
+            <a href="/perfil" class="register">Ver Perfil</a>
+        <a href="/logout" class="login-btn">Cerrar sesión</a>
+      <% } else { %>
+        <a href="/login" class="login-btn">Iniciar sesión</a>
+        <a href="/register" class="register">Regístrate</a>
+      <% } %>
+      </div>
 
   </header>

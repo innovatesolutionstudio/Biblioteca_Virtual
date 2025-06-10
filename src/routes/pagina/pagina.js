@@ -1,9 +1,7 @@
 // src/routes/pagina/index.js
 const express = require('express');
 const router = express.Router();
-
-
-const db = require('../../database/firebase'); // Asegúrate que esta ruta sea correcta
+const db = require('../../config/db');
 
 
 
@@ -60,10 +58,61 @@ router.get('/Galeria', (req, res) => {
 
 // Ruta para Nuestra Bolivia
 router.get('/Nuestra-Bolivia', (req, res) => {
-  res.render('Boliva/mapas',{ 
+  res.render('bolivia/mapas',{ 
     session: req.session
   });
 });
 
+router.get('/perfil', async (req, res) => {
+  if (!req.session.user) {
+    console.log(' No hay sesión activa. Redirigiendo a /login');
+    return res.redirect('/login');
+  }
+ 
+  console.log(' ID de sesión:', req.session.user.id_usuario);
+ 
+  try {
+   const [rows] = await db.execute(
+      'SELECT * FROM usuarios WHERE id_usuario = ?',
+      [req.session.user.id_usuario]
+    );
+    console.log("usuario: ",rows[0])
+    if (!rows || rows.length === 0) {
+      console.log(' Usuario no encontrado en la base de datos');
+      return res.status(404).send('Usuario no encontrado');
+    }
+ 
+    const usuario = rows[0];
+    console.log(' Usuario encontrado:', usuario);
+ 
+    res.render('Pagina/perfil', { usuario });
+  } catch (error) {
+    console.error(' Error al obtener usuario:', error);
+    res.status(500).send('Error interno');
+  }
+});
+ 
+// Ruta para actualizar el perfil
+router.post('/perfil/actualizar', async (req, res) => {
+  const { nombre, apellido, telefono } = req.body;
+  const id = req.session.user.id_usuario;
+ 
+  try {
+    await db.query(
+      'UPDATE usuarios SET nombre = ?, apellido = ?, telefono = ? WHERE id_usuario = ?',
+      [nombre, apellido, telefono, id]
+    );
+ 
+    // Opcional: actualiza la sesión con los nuevos valores
+    req.session.user.nombre = nombre;
+    req.session.user.apellido = apellido;
+    req.session.user.telefono = telefono;
+ 
+    res.redirect('/perfil');
+  } catch (error) {
+    console.error('Error actualizando perfil:', error);
+    res.status(500).send('Error actualizando');
+  }
+});
 
 module.exports = router;

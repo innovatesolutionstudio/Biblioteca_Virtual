@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 // Ruta para ChatBot
 router.get('/Asistente', (req, res) => {
-  res.render('Chatbot/chatbot',{
+  res.render('ChatBot/chatbot',{
     session: req.session
   });
   
