@@ -1,10 +1,9 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pandas as pd
-
 import os
 from dotenv import load_dotenv
-from flask import render_template
+
 
 load_dotenv()
 # Validación de variables de entorno
