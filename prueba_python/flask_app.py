@@ -42,9 +42,9 @@ for path in [FILE_PATH_INFLACION, FILE_PATH_POBLACION, 'uploads/dataset/censo_po
 def get_inflation():
     anio_param = request.args.get('anio')
     try:
-        selected_year = int(anio_param) if anio_param else 1980
+        selected_year = int(anio_param) if anio_param else 1960
     except ValueError:
-        selected_year = 1980
+        selected_year = 1960
 
     # Leer archivo y procesar
     df = pd.read_excel(FILE_PATH_INFLACION, sheet_name=0, header=3)
@@ -216,6 +216,8 @@ def get_pobreza():
         })
     else:
         return jsonify({'error': 'Indicador no disponible'}), 400
+
+
 # ===========================
 # API: Previsualizar dataset
 # ===========================
@@ -256,6 +258,8 @@ def previsualizar_dataset():
     except Exception as e:
         print(f'❌ Error al previsualizar dataset: {e}')
         return jsonify({'error': f'Error al procesar el archivo: {str(e)}'}), 500
+    
+
 # ===========================
 # API: subir dataset
 # ===========================
